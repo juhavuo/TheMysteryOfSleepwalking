@@ -9,6 +9,7 @@ public class SleepwalkerBehavior : MonoBehaviour {
 	private Rigidbody2D sleepwalkerBody;
 	private Animator sleeperAnimator;
 	private float desiredSpeed;
+	private Inventory inventory;
 	//private int counter;
 	private int health, maxHealth;
 	public float movementX, movementY;
@@ -23,6 +24,7 @@ public class SleepwalkerBehavior : MonoBehaviour {
 		this.sleepwalkerRenderer = GameObject.Find ("Sleepwalker").GetComponent<SpriteRenderer> ();
 		this.sleepwalkerBody = GameObject.Find ("Sleepwalker").GetComponent<Rigidbody2D> ();
 		this.sleeperAnimator = GameObject.Find ("Sleepwalker").GetComponent<Animator> ();
+		this.inventory = new Inventory (5);
 		Debug.Log (this.sleeperAnimator.ToString ());
 		//this.counter = 0;
 		desiredSpeed = 0.05f;
