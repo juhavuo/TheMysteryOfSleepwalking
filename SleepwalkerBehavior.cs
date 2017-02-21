@@ -109,6 +109,21 @@ public class SleepwalkerBehavior : MonoBehaviour {
 		return this.score;
 	}
 
+	void OnCollisionEnter2D(Collision2D coll){
+		string name = coll.gameObject.name;
+		Debug.Log (name);
+		if (name.Equals ("TestGem")) {
+			this.ChangeScore (10);
+		}
+		if (name.Equals ("SpikeBushTest")){
+			this.ChangeHealth(-50);
+		}
+	}
+
+	public void Death(){
+		this.sleepwalkerBody.gameObject.SetActive (false);
+	}
+
 	/*public void Update(){
 		this.sleeperAnimator.SetBool ("isWalkingLeft", this.isWalkingLeft);
 		this.sleeperAnimator.SetBool ("isWalkingDown", this.isWalkingDown);
