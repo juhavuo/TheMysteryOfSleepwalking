@@ -77,6 +77,11 @@ public class SleepwalkerBehavior : MonoBehaviour {
 		this.score += change;
 	}
 
+	public void setVariables(int health, int score){
+		this.health = health;
+		this.score = score;
+	}
+
 	public void Move(float x, float y){
 		this.movementX = x;
 		this.movementY = y;
