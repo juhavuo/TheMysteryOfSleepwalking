@@ -16,24 +16,32 @@ public class GameController : MonoBehaviour {
 	private ButtonScript up, left, right, down;
 	private int playerHealth, playerScore;
 	private Text scoreText, healthText;
-	private bool newGame;
+	private bool newGame=true;
 	private Button pauseButton;
 	private float movement;
 	private bool gamePaused;
 	private string filepath;
 	private string fileString;
+	public Camera mainCamera;
+	private Prefabloader prefabloader;
+
 	void Start () {
+		this.mainCamera.gameObject.SetActive (false);
 		this.fileString = Application.persistentDataPath + "/sleepwalkerInfo.data";
-		this.newGame = MenuScript.newGame;
+		this.newGame = MenuScript.newGame; //get the boolean value from menu wether start new game or load old one.
 		Debug.Log ("Is game new game?" + this.newGame);
-		this.sleepwalker = GameObject.Find ("Sleepwalker").GetComponent <SleepwalkerBehavior>(); 
+		this.sleepwalker = GameObject.Find ("Sleepwalker").GetComponent <SleepwalkerBehavior> (); 
 
 		if (!this.newGame) {
 			this.Load ();
 		}
+		this.prefabloader = new Prefabloader ();
+		this.prefabloader.defineUpperLeftCorner (0, 10);
+		this.prefabloader.LoadLevel ("Levels/Test2");
 
+		List<MapObject> levelmap = this.prefabloader.getLevelMap ();
 		this.pauseScript = GameObject.Find ("PauseMenuCanvas").GetComponent<PauseMenuScript> ();
-		this.up = GameObject.Find ("UpButton").GetComponent<ButtonScript>();
+		this.up = GameObject.Find ("UpButton").GetComponent<ButtonScript> ();
 		this.left = GameObject.Find ("LeftButton").GetComponent<ButtonScript> ();
 		this.right = GameObject.Find ("RightButton").GetComponent<ButtonScript> ();
 		this.down = GameObject.Find ("DownButton").GetComponent<ButtonScript> ();
@@ -44,14 +52,36 @@ public class GameController : MonoBehaviour {
 		this.movement = 0.2f;
 		this.gamePaused = false;
 		this.updatePlayerInfo ();
+		MapObject mo;
+		for (int j = 0; j < levelmap.Count; j++) {
+			mo = levelmap [j];
+			Debug.Log (mo.ToString ());
+			Debug.Log (mo.GetTransform ().ToString ());
+			Debug.Log (mo.GetVector ().ToString ());
+			Instantiate (mo.GetTransform (), mo.GetVector (), Quaternion.identity);
+		}
 	}
-	
+
+		/*
+		Debug.Log (bushprefab.ToString ());
+		for (int y = -4; y < 5; y+=2) {
+			
+		}
+		for (int y = -4; y < 5; y++) {
+			Instantiate (gemtransform, new Vector3 (6, y, 0), Quaternion.identity);
+		}
+		Instantiate (enemytransform, new Vector3 (3, 3, 0), Quaternion.identity);
+		for (int x = -4; x < 5; x += 2) {
+			Instantiate (bricktransform, new Vector3 (x, -10, 0), Quaternion.identity);
+		}*/
+	//}
 	// Update is called once per frame
 	void Update () {
 		if (!this.gamePaused) {
 			this.updatePlayerInfo ();
 			if (!this.sleepwalker.IsAlive ()) {
 				this.sleepwalker.Death ();
+				this.mainCamera.gameObject.SetActive (true);
 				this.gamePaused = true;
 				this.pauseScript.SetMenu (true);
 				this.pauseScript.ChangeVisibility (true);
@@ -91,6 +121,7 @@ public class GameController : MonoBehaviour {
 		}
 						
 	}
+		
 	/*
 	 * Updates score and health of player in screen.
 	 */
