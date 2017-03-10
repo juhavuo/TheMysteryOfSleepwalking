@@ -32,7 +32,7 @@ public class MenuScript : MonoBehaviour {
 	 */
 	public void StartGame(bool startNew){
 		newGame = startNew;
-		SceneManager.LoadScene ("GamePlay");
+		SceneManager.LoadScene ("Gameplay");
 
 	}
 

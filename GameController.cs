@@ -7,15 +7,18 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Game controller.
+/// </summary>
 public class GameController : MonoBehaviour {
 
 	// Use this for initialization
 
-	private SleepwalkerBehavior sleepwalker;
+	public SleepwalkerBehavior sleepwalker;
 	private PauseMenuScript pauseScript;
 	private ButtonScript up, left, right, down;
-	private int playerHealth, playerScore;
-	private Text scoreText, healthText;
+	private int playerHealth, playerScore, currentLevel;
+	private Text scoreText, healthText, levelText;
 	private bool newGame=true;
 	private Button pauseButton;
 	private float movement;
@@ -24,22 +27,27 @@ public class GameController : MonoBehaviour {
 	private string fileString;
 	public Camera mainCamera;
 	private Prefabloader prefabloader;
+	private List<MapObject> levelmap;
+	private Transform homeTransform;
 
+	/// <summary>
+	/// Start this instance.
+	/// </summary>
 	void Start () {
 		this.mainCamera.gameObject.SetActive (false);
 		this.fileString = Application.persistentDataPath + "/sleepwalkerInfo.data";
 		this.newGame = MenuScript.newGame; //get the boolean value from menu wether start new game or load old one.
 		Debug.Log ("Is game new game?" + this.newGame);
-		this.sleepwalker = GameObject.Find ("Sleepwalker").GetComponent <SleepwalkerBehavior> (); 
+		this.sleepwalker = GameObject.Find ("Sleepwalker").GetComponent <SleepwalkerBehavior> ();
+		this.homeTransform = GameObject.Find ("Home").GetComponent<Transform> ();
+		this.prefabloader = new Prefabloader ();
 
 		if (!this.newGame) {
 			this.Load ();
 		}
-		this.prefabloader = new Prefabloader ();
-		this.prefabloader.defineUpperLeftCorner (0, 10);
-		this.prefabloader.LoadLevel ("Levels/Test2");
 
-		List<MapObject> levelmap = this.prefabloader.getLevelMap ();
+
+
 		this.pauseScript = GameObject.Find ("PauseMenuCanvas").GetComponent<PauseMenuScript> ();
 		this.up = GameObject.Find ("UpButton").GetComponent<ButtonScript> ();
 		this.left = GameObject.Find ("LeftButton").GetComponent<ButtonScript> ();
@@ -49,33 +57,32 @@ public class GameController : MonoBehaviour {
 		this.pauseButton.onClick.AddListener (() => pause ());
 		this.scoreText = GameObject.Find ("ScoreText").GetComponent<Text> ();
 		this.healthText = GameObject.Find ("HealthText").GetComponent<Text> ();
+		this.levelText = GameObject.Find ("LevelText").GetComponent<Text> ();
 		this.movement = 0.2f;
 		this.gamePaused = false;
 		this.updatePlayerInfo ();
+		this.newLevel (this.currentLevel);
+
+	}
+
+	public void newLevel(int currentLevel){
+		this.prefabloader.LoadLevel (currentLevel);
+		this.levelmap = this.prefabloader.getLevelMap ();
 		MapObject mo;
 		for (int j = 0; j < levelmap.Count; j++) {
 			mo = levelmap [j];
-			Debug.Log (mo.ToString ());
-			Debug.Log (mo.GetTransform ().ToString ());
-			Debug.Log (mo.GetVector ().ToString ());
-			Instantiate (mo.GetTransform (), mo.GetVector (), Quaternion.identity);
+			Instantiate (mo.GetTransform (), mo.GetPositionVector (), Quaternion.identity);
+			this.sleepwalker.SetPosition (this.prefabloader.GetPlayerVector ());
+			this.homeTransform.position = this.prefabloader.GetExitVector ();
 		}
 	}
 
-		/*
-		Debug.Log (bushprefab.ToString ());
-		for (int y = -4; y < 5; y+=2) {
-			
-		}
-		for (int y = -4; y < 5; y++) {
-			Instantiate (gemtransform, new Vector3 (6, y, 0), Quaternion.identity);
-		}
-		Instantiate (enemytransform, new Vector3 (3, 3, 0), Quaternion.identity);
-		for (int x = -4; x < 5; x += 2) {
-			Instantiate (bricktransform, new Vector3 (x, -10, 0), Quaternion.identity);
-		}*/
+		
 	//}
 	// Update is called once per frame
+	/// <summary>
+	/// Update this instance.
+	/// </summary>
 	void Update () {
 		if (!this.gamePaused) {
 			this.updatePlayerInfo ();
@@ -88,46 +95,55 @@ public class GameController : MonoBehaviour {
 			}
 			if (this.up.GetPressed ()) {
 				this.sleepwalker.Move (0, this.movement);
-				this.sleepwalker.SetUpwards (true);
-			} else {
-				this.sleepwalker.SetUpwards (false);
-			}
+
+			} 
 
 			if (this.down.GetPressed ()) {
 				this.sleepwalker.Move (0, -this.movement);
-				this.sleepwalker.SetDownwards (true);
-			} else {
-				this.sleepwalker.SetDownwards (false);
-			}	
+
+			} 
 			if (this.left.GetPressed ()) {
 				this.sleepwalker.Move (-this.movement, 0);
-				this.sleepwalker.SetToLeft (true);
-			} else {
-				this.sleepwalker.SetToLeft (false);
-			}
+
+			} 
 
 			if (this.right.GetPressed ()) {
 				this.sleepwalker.Move (this.movement, 0);
-				this.sleepwalker.SetToRight (true);
-			} else {
-				this.sleepwalker.SetToRight (false);
+
+			} 
+			if(this.sleepwalker.GetNeedChangeLevel()){
+				if (this.prefabloader.GetCurrentLevel () + 1 < this.prefabloader.GetAmountOfLevels ()) {
+					this.currentLevel = this.prefabloader.GetNextLevel ();
+					this.Save ();
+					Debug.Log ("level" + this.currentLevel);
+					SceneManager.LoadScene ("MiddleScene");
+				} else {
+					SceneManager.LoadScene ("EndScene");
+				}
 			}
-				
+
 		} else {
 			if (this.pauseScript.GetIsExiting ()) {
-				this.Save ();
-				SceneManager.LoadScene ("GameMenu");
+				
+					this.Save ();
+
+					SceneManager.LoadScene ("GameMenu");
+				
+				
 			}
 		}
 						
 	}
 		
-	/*
-	 * Updates score and health of player in screen.
-	 */
+	/// <summary>
+	/// Updates the player info.
+	/// </summary>
+	/// Updates the player health and score Text-objects and Text-object describing the level player is in
 	public void updatePlayerInfo (){
 		this.scoreText.text = "Score " + this.sleepwalker.GetScore();
 		this.healthText.text = "Health " + this.sleepwalker.GetHealth ();
+		int representedLevel = this.currentLevel + 1;
+		this.levelText.text = "Level " + representedLevel;
 	}
 
 	public void pause(){
@@ -139,6 +155,9 @@ public class GameController : MonoBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Save the player data to file.
+	/// </summary>
 	public void Save(){
 
 		BinaryFormatter bf = new BinaryFormatter ();
@@ -147,11 +166,15 @@ public class GameController : MonoBehaviour {
 		SleepwalkerData swdata = new SleepwalkerData ();
 		swdata.health = this.sleepwalker.GetHealth();
 		swdata.score = this.sleepwalker.GetScore();
+		swdata.level = this.currentLevel;
 
 		bf.Serialize (file, swdata);
 		file.Close ();
 	}
 
+	/// <summary>
+	/// Load the player data from file
+	/// </summary>
 	public void Load(){
 		if (File.Exists (this.fileString)) {
 			BinaryFormatter bf = new BinaryFormatter ();
@@ -159,14 +182,21 @@ public class GameController : MonoBehaviour {
 			Debug.Log (file.ToString ());
 			SleepwalkerData swdata = (SleepwalkerData)bf.Deserialize (file);
 			this.sleepwalker.setVariables (swdata.health, swdata.score);
+			this.currentLevel = swdata.level;
 			file.Close ();
+		
 		}
 	}
 }
 
+/// <summary>
+/// Sleepwalker data.
+/// </summary>
+/// Stores playerdata to be saved to and loaded from file.
 // https://unity3d.com/learn/tutorials/topics/scripting/persistence-saving-and-loading-data
 [Serializable]
 class SleepwalkerData{
 	public int health;
 	public int score;
+	public int level;
 }
